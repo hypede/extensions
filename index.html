@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HypeDE Extensions</title>
+<meta name="description" content="Extensions for HypeDE: Dynamic Island on the shelf and how to use GNOME extensions.">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="ru" href="https://extensions.hypede.xyz/ru/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="assets/site.css?v=d804f1b828">
+<style>
+  body { padding-block-end: 48px; }
+  kbd { font: 500 0.82em var(--font-mono); padding: 1px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--on-accent-soft); }
+  .by { color: var(--muted); font-size: 0.95rem; }
+  .caps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
+  .caps figure { border-radius: 14px; overflow: hidden; }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero > * { animation: rise-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+    .hero > :nth-child(2) { animation-delay: 80ms; }
+    .hero > :nth-child(3) { animation-delay: 160ms; }
+    section { animation: rise-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms both; }
+    .how article { transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 320ms; }
+    .how article:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hero" id="top">
+    <div class="brand">
+      <img src="assets/img/logo.svg" alt="" width="36" height="36">
+      HypeDE
+      <a class="lang" href="ru/" hreflang="ru" lang="ru">Русский</a>
+    </div>
+    <h1>Extensions for HypeDE</h1>
+    <p class="lede">HypeDE runs an <strong>unmodified GNOME Shell</strong>, so it can carry extensions. Some come with HypeDE and follow its theme; regular <strong>GNOME extensions</strong> work too.</p>
+  </header>
+
+  <section id="island">
+    <div class="section-head">
+      <span class="eyebrow">Included</span>
+      <h2>Dynamic Island</h2>
+      <p class="by">by <a href="https://github.com/RBXLU">RBXLU</a> · <a href="https://github.com/RBXLU/DynamicLinux">DynamicLinux</a> · GPL-3.0</p>
+    </div>
+    <div class="part">
+      <div class="part-text">
+        <p>Lives on the shelf as a capsule next to the launcher button, like “Now playing” on a Chromebook. It shows music, downloads, timers and screen recording; click it and it opens above the shelf.</p>
+        <ul>
+          <li><strong>Tabs</strong>: clipboard history, file shelf, AI chat, notes, text tools, system, weather, timer and a pet.</li>
+          <li><strong>Tools</strong>: screenshot, screen recording, text from screen (OCR), colour picker, voice to text.</li>
+          <li><strong>Matches your theme</strong>: colours, font, corners and animation speed come from HypeDE.</li>
+          <li><strong>Open it</strong> with a click or <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>; turn it off in Settings → Personalization → Dynamic Island.</li>
+        </ul>
+      </div>
+      <figure class="screen">
+        <img src="assets/img/island-open.webp" width="960" height="570" alt="Dynamic Island opened above the shelf: clock, weather, system load, music player and quick tools">
+      </figure>
+    </div>
+    <div class="caps">
+      <figure class="screen"><img src="assets/img/island-capsule.webp" width="620" height="80" alt="" loading="lazy"><figcaption>In the light HypeDE theme.</figcaption></figure>
+      <figure class="screen"><img src="assets/img/island-capsule-dark.webp" width="620" height="80" alt="" loading="lazy"><figcaption>In Midnight — the capsule follows the theme.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="gnome">
+    <div class="section-head">
+      <span class="eyebrow">GNOME extensions</span>
+      <h2>Everything from extensions.gnome.org, when you want it.</h2>
+      <p>GNOME extensions are off in the HypeDE session so that a setup made for regular GNOME cannot break the shelf. Turn them on in <em>Settings → System preferences → GNOME services → GNOME extensions</em>, then install them with Extension Manager or from <a href="https://extensions.gnome.org">extensions.gnome.org</a>.</p>
+    </div>
+    <div class="how">
+      <article>
+        <h3>Work well</h3>
+        <p>Clipboard managers, system monitors, caffeine, weather, sound output switchers, tiling helpers.</p>
+      </article>
+      <article>
+        <h3>Conflict with the shelf</h3>
+        <p>Dash to Dock, Dash to Panel and others that replace the top bar or the dock — HypeDE already moves those parts.</p>
+      </article>
+      <article>
+        <h3>Supported versions</h3>
+        <p>GNOME Shell 48–50, the same as HypeDE itself.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="yours">
+    <div class="section-head">
+      <span class="eyebrow">Yours</span>
+      <h2>Want your extension to come with HypeDE?</h2>
+      <p>Open an issue in <a href="https://github.com/hypede/hypede/issues">hypede/hypede</a> with a link to the repository. It needs a GPL-compatible licence and GNOME Shell 48–50. We fit it into the shelf and the theme, as we did with Dynamic Island, and credit you here and in the README.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>HypeDE extensions. Each extension keeps its own licence.</span>
+    <a href="https://hypede.xyz/">Website</a>
+    <a href="https://wiki.hypede.xyz/">Wiki</a>
+    <a href="https://github.com/hypede/hypede">GitHub</a>
+  </footer>
+</main>
+</body>
+</html>

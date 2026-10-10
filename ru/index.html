@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Расширения HypeDE</title>
+<meta name="description" content="Расширения для HypeDE: динамический остров на полке и как пользоваться расширениями GNOME.">
+<link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="https://extensions.hypede.xyz/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="../assets/site.css?v=d804f1b828">
+<style>
+  body { padding-block-end: 48px; }
+  kbd { font: 500 0.82em var(--font-mono); padding: 1px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--on-accent-soft); }
+  .by { color: var(--muted); font-size: 0.95rem; }
+  .caps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
+  .caps figure { border-radius: 14px; overflow: hidden; }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero > * { animation: rise-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+    .hero > :nth-child(2) { animation-delay: 80ms; }
+    .hero > :nth-child(3) { animation-delay: 160ms; }
+    section { animation: rise-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms both; }
+    .how article { transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 320ms; }
+    .how article:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hero" id="top">
+    <div class="brand">
+      <img src="../assets/img/logo.svg" alt="" width="36" height="36">
+      HypeDE
+      <a class="lang" href="../" hreflang="en" lang="en">English</a>
+    </div>
+    <h1>Расширения для HypeDE</h1>
+    <p class="lede">HypeDE работает на <strong>нетронутом GNOME Shell</strong>, поэтому умеет расширения. Некоторые идут вместе с HypeDE и подстраиваются под его тему; обычные <strong>расширения GNOME</strong> тоже работают.</p>
+  </header>
+
+  <section id="island">
+    <div class="section-head">
+      <span class="eyebrow">В комплекте</span>
+      <h2>Динамический остров</h2>
+      <p class="by">автор <a href="https://github.com/RBXLU">RBXLU</a> · <a href="https://github.com/RBXLU/DynamicLinux">DynamicLinux</a> · GPL-3.0</p>
+    </div>
+    <div class="part">
+      <div class="part-text">
+        <p>Живёт на полке капсулой рядом с кнопкой лаунчера, как «Сейчас играет» на Chromebook. Показывает музыку, загрузки, таймеры и запись экрана; по щелчку раскрывается над полкой.</p>
+        <ul>
+          <li><strong>Вкладки</strong>: история буфера обмена, полка файлов, ИИ-чат, заметки, работа с текстом, система, погода, таймер и питомец.</li>
+          <li><strong>Инструменты</strong>: снимок и запись экрана, текст с экрана (OCR), пипетка, голос в текст.</li>
+          <li><strong>В вашей теме</strong>: цвета, шрифт, скругления и скорость анимаций берутся из HypeDE.</li>
+          <li><strong>Открыть</strong> — щелчком или <kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>; выключить — Настройки → Персонализация → Динамический остров.</li>
+        </ul>
+      </div>
+      <figure class="screen">
+        <img src="../assets/img/island-open.webp" width="960" height="570" alt="Динамический остров раскрыт над полкой: часы, погода, нагрузка системы, плеер и быстрые инструменты">
+      </figure>
+    </div>
+    <div class="caps">
+      <figure class="screen"><img src="../assets/img/island-capsule.webp" width="620" height="80" alt="" loading="lazy"><figcaption>В светлой теме HypeDE.</figcaption></figure>
+      <figure class="screen"><img src="../assets/img/island-capsule-dark.webp" width="620" height="80" alt="" loading="lazy"><figcaption>В теме Midnight — капсула следует теме.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="gnome">
+    <div class="section-head">
+      <span class="eyebrow">Расширения GNOME</span>
+      <h2>Всё с extensions.gnome.org — когда захотите.</h2>
+      <p>В сеансе HypeDE расширения GNOME выключены, чтобы набор, собранный для обычного GNOME, не сломал полку. Включите их в <em>Настройки → Системные настройки → Службы GNOME → Расширения GNOME</em> и ставьте через Extension Manager или с <a href="https://extensions.gnome.org">extensions.gnome.org</a>.</p>
+    </div>
+    <div class="how">
+      <article>
+        <h3>Хорошо работают</h3>
+        <p>Менеджеры буфера обмена, мониторы системы, caffeine, погода, переключатели звука, помощники раскладки окон.</p>
+      </article>
+      <article>
+        <h3>Конфликтуют с полкой</h3>
+        <p>Dash to Dock, Dash to Panel и другие, что заменяют верхнюю панель или док, — HypeDE уже переставляет эти части.</p>
+      </article>
+      <article>
+        <h3>Версии</h3>
+        <p>GNOME Shell 48–50, как и сам HypeDE.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="yours">
+    <div class="section-head">
+      <span class="eyebrow">Ваше</span>
+      <h2>Хотите, чтобы ваше расширение шло вместе с HypeDE?</h2>
+      <p>Откройте issue в <a href="https://github.com/hypede/hypede/issues">hypede/hypede</a> со ссылкой на репозиторий. Нужна лицензия, совместимая с GPL, и GNOME Shell 48–50. Мы впишем расширение в полку и тему, как сделали с динамическим островом, и укажем вас здесь и в README.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Расширения HypeDE. У каждого расширения своя лицензия.</span>
+    <a href="https://hypede.xyz/ru/">Сайт</a>
+    <a href="https://wiki.hypede.xyz/ru/">Вики</a>
+    <a href="https://github.com/hypede/hypede">GitHub</a>
+  </footer>
+</main>
+</body>
+</html>
