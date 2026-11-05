@@ -69,10 +69,11 @@ class LocalStorage(Storage):
 
 
 class BlobStorage(Storage):
-    """Приватное хранилище Vercel Blob через его HTTP API."""
+    """Приватное хранилище Vercel Blob через его HTTP API — так же, как это
+    делает официальный клиент @vercel/blob (версия API 13)."""
 
-    API = "https://blob.vercel-storage.com"
-    VERSION = "11"
+    API = "https://vercel.com/api/blob"
+    VERSION = "13"
 
     def __init__(self, token: str):
         self.token = token
@@ -80,19 +81,21 @@ class BlobStorage(Storage):
         parts = token.split("_")
         if len(parts) < 5 or parts[:3] != ["vercel", "blob", "rw"]:
             raise ValueError("BLOB_READ_WRITE_TOKEN does not look like a Vercel Blob token")
-        self.store = parts[3].lower()
+        self.store = parts[3]
         self.base = f"https://{self.store}.private.blob.vercel-storage.com"
 
     def _request(self, method: str, url: str, data: bytes | None = None, headers: dict | None = None):
         request = urllib.request.Request(url, data=data, method=method, headers={
-            "authorization": f"Bearer {self.token}", "x-api-version": self.VERSION, **(headers or {})})
+            "authorization": f"Bearer {self.token}", "x-api-version": self.VERSION,
+            "x-vercel-blob-store-id": self.store, **(headers or {})})
         return urllib.request.urlopen(request, timeout=30)
 
     def get(self, key):
-        url = f"{self.base}/{urllib.parse.quote(_safe(key))}"
+        # cache=0 — свежая копия, а не закэшированная: документы перезаписываются.
+        url = f"{self.base}/{urllib.parse.quote(_safe(key))}?cache=0"
         try:
-            # Свежая копия, а не закэшированная: объекты перезаписываются.
-            with self._request("GET", url, headers={"cache-control": "no-cache"}) as response:
+            with urllib.request.urlopen(urllib.request.Request(
+                    url, headers={"authorization": f"Bearer {self.token}"}), timeout=30) as response:
                 return response.read()
         except urllib.error.HTTPError as e:
             if e.code == 404:
@@ -100,7 +103,7 @@ class BlobStorage(Storage):
             raise
 
     def put(self, key, data, content_type="application/octet-stream"):
-        url = f"{self.API}/?pathname={urllib.parse.quote(_safe(key))}"
+        url = f"{self.API}/?{urllib.parse.urlencode({'pathname': _safe(key)})}"
         with self._request("PUT", url, data=data, headers={
                 "x-content-type": content_type, "x-add-random-suffix": "0", "x-allow-overwrite": "1",
                 "x-vercel-blob-access": "private", "x-cache-control-max-age": "60"}) as response:
