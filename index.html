@@ -13,6 +13,10 @@
 <link rel="stylesheet" href="assets/site.css?v=d804f1b828">
 <style>
   body { padding-block-end: 48px; }
+  .btn-link { display: inline-flex; align-items: center; padding: 11px 22px; border-radius: 999px; font-weight: 600; text-decoration: none;
+              background: var(--accent-soft); color: var(--on-accent-soft); }
+  .btn-link.primary { background: var(--accent); color: var(--surface); }
+  .note { color: var(--muted); font-size: 0.95rem; margin-top: 16px; max-width: 70ch; }
   kbd { font: 500 0.82em var(--font-mono); padding: 1px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--on-accent-soft); }
   .by { color: var(--muted); font-size: 0.95rem; }
   .caps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
@@ -38,6 +42,20 @@
     <h1>Extensions for HypeDE</h1>
     <p class="lede">HypeDE runs an <strong>unmodified GNOME Shell</strong>, so it can carry extensions. Some come with HypeDE and follow its theme; regular <strong>GNOME extensions</strong> work too.</p>
   </header>
+
+  <section id="catalog">
+    <div class="section-head">
+      <span class="eyebrow">Catalog</span>
+      <h2>Extensions and themes from the community</h2>
+      <p>Create an account — nickname, name, photo and a few words about you — and publish your own GNOME Shell extensions and HypeDE themes. Every upload is scanned by an antivirus and checked by a person before it appears in the catalog.</p>
+    </div>
+    <div class="actions">
+      <a class="btn-link primary" href="catalog/">Open the catalog</a>
+      <a class="btn-link" href="catalog/#/submit">Publish yours</a>
+      <a class="btn-link" href="catalog/#/account">Sign in or create an account</a>
+    </div>
+    <p class="note">Extensions and themes in the catalog are made by users. HypeDE is not responsible for your system: you install them at your own risk.</p>
+  </section>
 
   <section id="island">
     <div class="section-head">
@@ -82,7 +100,7 @@
       </article>
       <article>
         <h3>Supported versions</h3>
-        <p>GNOME Shell 48–50, the same as HypeDE itself.</p>
+        <p>GNOME Shell 48–51, the same as HypeDE itself.</p>
       </article>
     </div>
   </section>
@@ -91,12 +109,13 @@
     <div class="section-head">
       <span class="eyebrow">Yours</span>
       <h2>Want your extension to come with HypeDE?</h2>
-      <p>Open an issue in <a href="https://github.com/hypede/hypede/issues">hypede/hypede</a> with a link to the repository. It needs a GPL-compatible licence and GNOME Shell 48–50. We fit it into the shelf and the theme, as we did with Dynamic Island, and credit you here and in the README.</p>
+      <p>Publish it in the <a href="catalog/#/submit">catalog</a> first. If people like it, open an issue in <a href="https://github.com/hypede/hypede/issues">hypede/hypede</a> with a link to the repository. It needs a GPL-compatible licence and GNOME Shell 48–51. We fit it into the shelf and the theme, as we did with Dynamic Island, and credit you here and in the README.</p>
     </div>
   </section>
 
   <footer>
     <span>HypeDE extensions. Each extension keeps its own licence.</span>
+    <a href="catalog/">Catalog</a>
     <a href="https://hypede.xyz/">Website</a>
     <a href="https://wiki.hypede.xyz/">Wiki</a>
     <a href="https://github.com/hypede/hypede">GitHub</a>

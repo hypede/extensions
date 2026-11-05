@@ -1,0 +1,7 @@
+# Caddy перед API: HTTPS-сертификат сам, ограничение размера загрузки.
+api.extensions.hypede.xyz {
+    request_body {
+        max_size 70MB
+    }
+    reverse_proxy 127.0.0.1:8080
+}

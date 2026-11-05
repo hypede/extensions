@@ -13,6 +13,10 @@
 <link rel="stylesheet" href="../assets/site.css?v=d804f1b828">
 <style>
   body { padding-block-end: 48px; }
+  .btn-link { display: inline-flex; align-items: center; padding: 11px 22px; border-radius: 999px; font-weight: 600; text-decoration: none;
+              background: var(--accent-soft); color: var(--on-accent-soft); }
+  .btn-link.primary { background: var(--accent); color: var(--surface); }
+  .note { color: var(--muted); font-size: 0.95rem; margin-top: 16px; max-width: 70ch; }
   kbd { font: 500 0.82em var(--font-mono); padding: 1px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--on-accent-soft); }
   .by { color: var(--muted); font-size: 0.95rem; }
   .caps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
@@ -38,6 +42,20 @@
     <h1>Расширения для HypeDE</h1>
     <p class="lede">HypeDE работает на <strong>нетронутом GNOME Shell</strong>, поэтому умеет расширения. Некоторые идут вместе с HypeDE и подстраиваются под его тему; обычные <strong>расширения GNOME</strong> тоже работают.</p>
   </header>
+
+  <section id="catalog">
+    <div class="section-head">
+      <span class="eyebrow">Каталог</span>
+      <h2>Расширения и темы от сообщества</h2>
+      <p>Создайте аккаунт — ник, имя, фото и пара слов о себе — и публикуйте свои расширения GNOME Shell и темы HypeDE. Каждая загрузка проходит проверку антивирусом и вручную, прежде чем появиться в каталоге.</p>
+    </div>
+    <div class="actions">
+      <a class="btn-link primary" href="catalog/">Открыть каталог</a>
+      <a class="btn-link" href="catalog/#/submit">Опубликовать своё</a>
+      <a class="btn-link" href="catalog/#/account">Войти или создать аккаунт</a>
+    </div>
+    <p class="note">Расширения и темы в каталоге создают пользователи. HypeDE не несёт ответственности за вашу систему: устанавливаете вы их на свой риск.</p>
+  </section>
 
   <section id="island">
     <div class="section-head">
@@ -82,7 +100,7 @@
       </article>
       <article>
         <h3>Версии</h3>
-        <p>GNOME Shell 48–50, как и сам HypeDE.</p>
+        <p>GNOME Shell 48–51, как и сам HypeDE.</p>
       </article>
     </div>
   </section>
@@ -91,7 +109,7 @@
     <div class="section-head">
       <span class="eyebrow">Ваше</span>
       <h2>Хотите, чтобы ваше расширение шло вместе с HypeDE?</h2>
-      <p>Откройте issue в <a href="https://github.com/hypede/hypede/issues">hypede/hypede</a> со ссылкой на репозиторий. Нужна лицензия, совместимая с GPL, и GNOME Shell 48–50. Мы впишем расширение в полку и тему, как сделали с динамическим островом, и укажем вас здесь и в README.</p>
+      <p>Сначала опубликуйте его в <a href="catalog/#/submit">каталоге</a>. Если оно понравится людям, откройте issue в <a href="https://github.com/hypede/hypede/issues">hypede/hypede</a> со ссылкой на репозиторий. Нужна лицензия, совместимая с GPL, и GNOME Shell 48–51. Мы впишем расширение в полку и тему, как сделали с динамическим островом, и укажем вас здесь и в README.</p>
     </div>
   </section>
 
