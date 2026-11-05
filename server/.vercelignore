@@ -1,0 +1,7 @@
+tests/
+data/
+Dockerfile
+docker-start.sh
+Caddyfile.example
+.pytest_cache/
+__pycache__/

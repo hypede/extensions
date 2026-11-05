@@ -1,0 +1,74 @@
+name: Antivirus
+
+# На Vercel ClamAV не запустить, поэтому новые загрузки каталога проверяет
+# этот workflow: каждые полчаса берёт у API версии без проверки
+# антивирусом, сканирует ClamAV и отправляет итог. Заражённые версии API
+# отклоняет сам; остальные по-прежнему ждут модератора.
+#
+# Нужен секрет репозитория HYPEDE_SCAN_TOKEN — то же значение, что у
+# переменной HYPEDE_STORE_SCAN_TOKEN в проекте Vercel. Адрес API можно
+# сменить переменной репозитория HYPEDE_API.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency: antivirus
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      API: ${{ vars.HYPEDE_API || 'https://api.extensions.hypede.xyz' }}
+      TOKEN: ${{ secrets.HYPEDE_SCAN_TOKEN }}
+    steps:
+      - name: Anything to scan?
+        id: queue
+        run: |
+          if [ -z "$TOKEN" ]; then echo "HYPEDE_SCAN_TOKEN is not set"; echo "count=0" >> "$GITHUB_OUTPUT"; exit 0; fi
+          curl -fsS -H "Authorization: Bearer $TOKEN" "$API/api/scan/queue" > queue.json
+          count=$(python3 -c "import json; print(len(json.load(open('queue.json'))['versions']))")
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "versions to scan: $count"
+      - name: Install ClamAV
+        if: steps.queue.outputs.count != '0'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clamav >/dev/null
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet
+      - name: Scan
+        if: steps.queue.outputs.count != '0'
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess, tempfile, urllib.request
+          api, token = os.environ["API"], os.environ["TOKEN"]
+          def call(path, data=None):
+              headers = {"Authorization": f"Bearer {token}"}
+              if data is not None:
+                  headers.update({"Content-Type": "application/json", "X-HypeDE": "1"})
+                  data = json.dumps(data).encode()
+              return urllib.request.urlopen(urllib.request.Request(api + path, data=data, headers=headers), timeout=60)
+          for v in json.load(open("queue.json"))["versions"]:
+              raw = call(f"/api/scan/file/{v['id']}").read()
+              if hashlib.sha256(raw).hexdigest() != v["sha256"]:
+                  print(v["id"], "checksum mismatch, skipped")
+                  continue
+              with tempfile.NamedTemporaryFile(suffix=".zip" if v["kind"] == "extension" else ".json") as f:
+                  f.write(raw)
+                  f.flush()
+                  result = subprocess.run(["clamscan", "--no-summary", "--infected", f.name], capture_output=True, text=True)
+              if result.returncode == 0:
+                  verdict = "clean"
+              elif result.returncode == 1:
+                  found = (result.stdout.strip().splitlines() or ["threat found"])[-1]
+                  verdict = "infected: " + found.split(":", 1)[-1].strip().removesuffix(" FOUND")
+              else:
+                  print(v["id"], "clamscan failed:", result.stderr.strip())
+                  continue
+              print(v["id"], verdict, json.load(call(f"/api/scan/{v['id']}", {"antivirus": verdict})))
+          PY

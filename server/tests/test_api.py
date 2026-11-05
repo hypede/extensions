@@ -17,11 +17,20 @@ H = {"X-HypeDE": "1"}
 
 @pytest.fixture()
 def make_client(tmp_path):
+    # Один и тот же ключ подписи и каталог данных — как одно развёртывание,
+    # к которому ходят разные браузеры.
+    config = Config(data=tmp_path, origins=["https://extensions.hypede.xyz"], moderators=["boss"],
+                    public_url="http://testserver", clamav="", secret="test-secret", scan_token="scan-secret")
+
     def make():
-        config = Config(data=tmp_path, origins=["https://extensions.hypede.xyz"], moderators=["boss"],
-                        secure_cookies=False, public_url="http://testserver", clamav="")
         return TestClient(create_app(config))
     return make
+
+
+def sign_in(client, data):
+    """Токен входа — в заголовок всех следующих запросов этого «браузера»."""
+    client.headers["Authorization"] = f"Bearer {data['token']}"
+    return data
 
 
 def register(client, handle, email=None, password="correct horse battery"):
@@ -29,7 +38,7 @@ def register(client, handle, email=None, password="correct horse battery"):
         "email": email or f"{handle}@example.org", "password": password, "handle": handle,
         "displayName": handle.title()})
     assert r.status_code == 200, r.text
-    return r.json()
+    return sign_in(client, r.json())
 
 
 def extension_zip(uuid="clock@example.org", extra=None, shell=("50", "51")):
@@ -83,8 +92,13 @@ def test_account_flow(make_client):
     assert client.get("/api/me").json() == {"signedIn": False}
     assert client.post("/api/auth/login", headers=H, json={"login": "anna_k", "password": "wrong password!"}
                        ).status_code == 401
-    assert client.post("/api/auth/login", headers=H, json={"login": "anna@example.org",
-                                                           "password": "correct horse battery"}).status_code == 200
+    r = client.post("/api/auth/login", headers=H, json={"login": "anna@example.org", "password": "correct horse battery"})
+    assert r.status_code == 200
+    sign_in(client, r.json())
+    assert client.get("/api/me").json()["handle"] == "anna_k"
+    # Подделанный токен не действует.
+    client.headers["Authorization"] = "Bearer " + r.json()["token"][:-4] + "0000"
+    assert client.get("/api/me").json() == {"signedIn": False}
 
 
 def test_registration_rules(make_client):
@@ -124,6 +138,8 @@ def test_extension_review_flow(make_client):
     assert anon.get(f"/api/items/extension/{item['slug']}").status_code == 404
     assert anon.get(f"/api/items/{item['id']}/download").status_code == 404
     assert author.get(f"/api/items/extension/{item['slug']}").json()["versions"][0]["status"] == "pending"
+    # Автор может скачать свою версию на проверке.
+    assert author.get(f"/api/items/{item['id']}/download?version=1").status_code == 200
 
     # Обычный пользователь не модератор.
     assert author.get("/api/mod/queue").status_code == 403
@@ -145,7 +161,7 @@ def test_extension_review_flow(make_client):
     file = anon.get(f"/api/items/{item['id']}/download")
     assert file.status_code == 200 and file.headers["content-type"] == "application/zip"
     assert zipfile.ZipFile(io.BytesIO(file.content)).read("metadata.json")
-    assert anon.get(f"/api/items/extension/{item['slug']}").json()["downloads"] == 1
+    assert file.headers["x-checksum-sha256"] == page["version"]["sha256"]
 
     # Новая версия ждёт проверки, а старая остаётся доступной.
     r = author.post(f"/api/items/{item['id']}/versions", headers=H, data={"accept_terms": "true"},
@@ -210,3 +226,34 @@ def test_profile_page_shows_only_approved_to_others(make_client):
     assert page["user"]["displayName"] == "Maker" and page["items"] == []
     assert len(author.get("/api/users/maker").json()["items"]) == 1
     assert "email" not in page["user"]
+
+
+def test_antivirus_from_github_actions(make_client):
+    author = make_client()
+    register(author, "scanned")
+    item = upload(author, "extension", extension_zip(uuid="scan@example.org")).json()["item"]
+    scanner = make_client()
+    assert scanner.get("/api/scan/queue").status_code == 403
+    scanner.headers["Authorization"] = "Bearer scan-secret"
+    todo = scanner.get("/api/scan/queue").json()["versions"]
+    assert [v["id"] for v in todo] == [f"{item['id']}-1"]
+    assert scanner.get(f"/api/scan/file/{todo[0]['id']}").content.startswith(b"PK")
+    r = scanner.post(f"/api/scan/{todo[0]['id']}", headers=H, json={"antivirus": "infected: Eicar-Test"})
+    assert r.json()["status"] == "rejected"
+    assert scanner.get("/api/scan/queue").json()["versions"] == []
+    page = author.get(f"/api/items/extension/{item['slug']}").json()
+    assert page["versions"][0]["report"]["antivirus"] == "infected: Eicar-Test"
+
+
+def test_profile_change_updates_catalog(make_client):
+    author = make_client()
+    register(author, "painter")
+    item = upload(author, "theme", theme_json(), name="Sky").json()["item"]
+    boss = make_client()
+    register(boss, "boss")
+    boss.post(f"/api/mod/versions/{item['id']}-1/approve", headers=H, json={})
+    author.patch("/api/me", headers=H, json={"displayName": "Painter Pro", "handle": "painter_pro"})
+    card = make_client().get("/api/items?kind=theme").json()["items"][0]
+    assert card["author"] == {"handle": "painter_pro", "displayName": "Painter Pro", "avatar": ""}
+    assert make_client().get("/api/users/painter").status_code == 404
+    assert make_client().get("/api/users/painter_pro").json()["items"][0]["slug"] == "sky"

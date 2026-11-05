@@ -29,8 +29,8 @@ const T = RU ? {
   pending: 'на проверке', approved: 'опубликовано', rejected: 'отклонено', noteFromMod: 'Модератор:',
   newVersion: 'Загрузить новую версию', edit: 'Изменить', remove: 'Удалить', confirmRemove: 'Удалить насовсем?',
   kind: 'Что публикуете', extension: 'Расширение', theme: 'Тема', file: 'Файл',
-  fileExt: 'ZIP-архив расширения GNOME Shell (как от «gnome-extensions pack»): metadata.json и extension.js в корне.',
-  fileTheme: 'JSON-файл темы HypeDE (Настройки → Персонализация → Темы → «Экспортировать»).',
+  fileExt: 'ZIP-архив расширения GNOME Shell (как от «gnome-extensions pack»): metadata.json и extension.js в корне. До 4 МБ.',
+  fileTheme: 'JSON-файл темы HypeDE (Настройки → Персонализация → Темы → «Экспортировать»). До 4 МБ — обои лучше в JPEG.',
   name: 'Название', summary: 'Коротко', summaryHint: 'одна строка, до 140 символов',
   description: 'Описание', descriptionHint: 'что делает, как настроить; до 5000 символов',
   preview: 'Картинка', previewHint: 'снимок экрана, PNG или JPEG; для тем — обязательно',
@@ -61,8 +61,8 @@ const T = RU ? {
   pending: 'in review', approved: 'published', rejected: 'rejected', noteFromMod: 'Moderator:',
   newVersion: 'Upload a new version', edit: 'Edit', remove: 'Delete', confirmRemove: 'Delete for good?',
   kind: 'What are you publishing', extension: 'Extension', theme: 'Theme', file: 'File',
-  fileExt: 'A GNOME Shell extension ZIP (as made by “gnome-extensions pack”): metadata.json and extension.js at the root.',
-  fileTheme: 'A HypeDE theme JSON file (Settings → Personalization → Themes → Export).',
+  fileExt: 'A GNOME Shell extension ZIP (as made by “gnome-extensions pack”): metadata.json and extension.js at the root. Up to 4 MB.',
+  fileTheme: 'A HypeDE theme JSON file (Settings → Personalization → Themes → Export). Up to 4 MB — JPEG wallpapers keep it small.',
   name: 'Name', summary: 'Summary', summaryHint: 'one line, up to 140 characters',
   description: 'Description', descriptionHint: 'what it does, how to set it up; up to 5000 characters',
   preview: 'Picture', previewHint: 'a screenshot, PNG or JPEG; required for themes',
@@ -99,6 +99,23 @@ const app = document.getElementById('app');
 let me = null;
 let disclaimer = null;
 
+// Сайт и API на разных доменах, а куки между доменами браузеры блокируют,
+// поэтому токен входа хранится здесь и уходит в заголовке Authorization.
+function token() {
+  try { return localStorage.hypedeToken || ''; } catch { return ''; }
+}
+function setToken(value) {
+  try {
+    if (value) localStorage.hypedeToken = value;
+    else localStorage.removeItem('hypedeToken');
+  } catch {}
+}
+function signedIn(data) {
+  if (data.token) setToken(data.token);
+  me = data;
+  return data;
+}
+
 // ------------------------------------------------------------------ помощники
 
 function h(tag, attrs = {}, ...children) {
@@ -118,8 +135,9 @@ function h(tag, attrs = {}, ...children) {
 }
 
 async function api(path, { method = 'GET', json, form } = {}) {
-  const options = { method, credentials: 'include', headers: {} };
+  const options = { method, headers: {} };
   if (method !== 'GET') options.headers['X-HypeDE'] = '1';
+  if (token()) options.headers.Authorization = `Bearer ${token()}`;
   if (json !== undefined) {
     options.headers['Content-Type'] = 'application/json';
     options.body = JSON.stringify(json);
@@ -137,6 +155,21 @@ async function api(path, { method = 'GET', json, form } = {}) {
     throw new Error(RU ? (ERRORS_RU[message] || message) : message);
   }
   return data;
+}
+
+// Версию на проверке может скачать только автор или модератор — с токеном,
+// поэтому не обычной ссылкой, а запросом и сохранением файла.
+async function downloadPrivate(path, fallbackName) {
+  const response = await fetch(API + path, { headers: { Authorization: `Bearer ${token()}` } });
+  if (!response.ok) { alert(T.notFound); return; }
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const name = (disposition.match(/filename="([^"]+)"/) || [])[1] || fallbackName;
+  const url = URL.createObjectURL(await response.blob());
+  const a = h('a', { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 function avatar(user, size = '') {
@@ -202,11 +235,11 @@ function topbar() {
 
 async function browse(kind) {
   const params = new URLSearchParams(location.hash.split('?')[1] || '');
-  const q = params.get('q') || '', sort = params.get('sort') || 'popular';
+  const q = params.get('q') || '', sort = params.get('sort') || 'new';
   const grid = h('div', { class: 'grid' }, spinner());
   const search = h('input', { type: 'search', placeholder: T.search, value: q, 'aria-label': T.search });
-  const order = h('select', { 'aria-label': T.popular },
-    ...[['popular', T.popular], ['new', T.newest], ['name', T.byName]].map(([v, t]) =>
+  const order = h('select', { 'aria-label': T.newest },
+    ...[['new', T.newest], ['name', T.byName]].map(([v, t]) =>
       h('option', { value: v, selected: v === sort }, t)));
   const go = () => {
     const query = new URLSearchParams({ q: search.value.trim(), sort: order.value });
@@ -238,15 +271,16 @@ function card(item) {
     h('div', { class: 'body' },
       h('h3', {}, item.name),
       h('p', { class: 'summary' }, item.summary),
-      h('span', { class: 'byline' }, avatar(item.author, 'small'), item.author ? item.author.displayName : '',
-        ` · ${item.downloads} ${T.downloads}`)));
+      h('span', { class: 'byline' }, avatar(item.author, 'small'), item.author ? item.author.displayName : '')));
 }
 
 async function itemPage(kind, slug) {
   show(spinner());
   let item;
   try {
-    item = await api(`/api/items/${kind}/${encodeURIComponent(slug)}`);
+    // С входом — отдельный адрес: ответ с версиями на проверке не должен
+    // попасть в общий кэш.
+    item = await api(`/api/items/${kind}/${encodeURIComponent(slug)}${me ? '?viewer=1' : ''}`);
   } catch (e) {
     show(notice(e.message === 'not found' ? T.notFound : e.message, 'error'));
     return;
@@ -273,8 +307,7 @@ async function itemPage(kind, slug) {
         byline(item.author),
         h('p', {}, item.summary),
         disclaimerBox(),
-        v ? h('a', { class: 'btn primary', href: v.download, download: file }, T.download) : statusChip('pending'),
-        h('span', { class: 'byline' }, `${item.downloads} ${T.downloads}`))),
+        v ? h('a', { class: 'btn primary', href: v.download, download: file }, T.download) : statusChip('pending'))),
     item.description ? h('div', { class: 'panel' }, h('h2', {}, T.description), h('p', { class: 'description' }, item.description)) : null,
     h('div', { class: 'two' },
       h('div', { class: 'panel' }, h('h2', {}, T.install), ...install),
@@ -286,7 +319,7 @@ function versionsPanel(item) {
   return h('div', { class: 'panel' }, h('h2', {}, T.versions),
     h('div', { class: 'list' }, ...item.versions.map(v => h('div', { class: 'list-item' },
       h('div', { class: 'row' }, h('strong', {}, `#${v.number}`), statusChip(v.status), h('span', { class: 'byline' }, date(v.created)),
-        h('a', { href: `${API}/api/items/${item.id}/download?version=${v.number}` }, T.download)),
+        h('button', { class: 'btn flat', onclick: () => downloadPrivate(`/api/items/${item.id}/download?version=${v.number}`, 'version') }, T.download)),
       v.note ? h('p', {}, T.noteFromMod + ' ' + v.note) : null,
       reportView(v.report)))));
 }
@@ -328,7 +361,7 @@ function signInView() {
   const signIn = h('form', { class: 'form panel', onsubmit: async e => {
     e.preventDefault();
     try {
-      me = await api('/api/auth/login', { method: 'POST', json: { login: login.value, password: password.value } });
+      signedIn(await api('/api/auth/login', { method: 'POST', json: { login: login.value, password: password.value } }));
       route();
     } catch (err) { message.replaceChildren(notice(err.message, 'error')); }
   } }, h('h2', {}, T.signIn), field(T.login, login), field(T.password, password), h('button', { class: 'btn primary', type: 'submit' }, T.signIn));
@@ -341,8 +374,8 @@ function signInView() {
   const register = h('form', { class: 'form panel', onsubmit: async e => {
     e.preventDefault();
     try {
-      me = await api('/api/auth/register', { method: 'POST', json: {
-        email: email.value, handle: handle.value.toLowerCase(), displayName: display.value, password: pass.value } });
+      signedIn(await api('/api/auth/register', { method: 'POST', json: {
+        email: email.value, handle: handle.value.toLowerCase(), displayName: display.value, password: pass.value } }));
       route();
     } catch (err) { msg2.replaceChildren(notice(err.message, 'error')); }
   } }, h('h2', {}, T.createAccount), field(T.email, email), field(T.handle, handle, T.handleHint),
@@ -392,7 +425,7 @@ async function accountPage() {
   const passwordForm = h('form', { class: 'form', onsubmit: async e => {
     e.preventDefault();
     try {
-      await api('/api/me', { method: 'PATCH', json: { currentPassword: current.value, password: next.value } });
+      signedIn(await api('/api/me', { method: 'PATCH', json: { currentPassword: current.value, password: next.value } }));
       passStatus.replaceChildren(notice(T.saved));
       current.value = next.value = '';
     } catch (err) { passStatus.replaceChildren(notice(err.message, 'error')); }
@@ -407,7 +440,8 @@ async function accountPage() {
         h('a', { class: 'btn primary', href: '#/submit' }, T.publish))),
     h('section', { class: 'panel' }, h('h2', {}, T.changePassword), passwordForm),
     h('div', {}, h('button', { class: 'btn flat', onclick: async () => {
-      await api('/api/auth/logout', { method: 'POST' });
+      await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      setToken('');
       me = null;
       location.hash = '#/extensions';
     } }, T.signOut)));
@@ -522,7 +556,7 @@ async function moderatePage() {
       item.uuid ? h('p', { class: 'byline' }, 'UUID: ' + item.uuid) : null,
       reportView(v.report),
       h('div', { class: 'row' },
-        h('a', { class: 'btn', href: `${API}/api/items/${item.id}/download?version=${v.number}` }, T.download),
+        h('button', { class: 'btn', onclick: () => downloadPrivate(`/api/items/${item.id}/download?version=${v.number}`, 'version') }, T.download),
         note,
         h('button', { class: 'btn primary', onclick: () => decide('approve') }, T.approve),
         h('button', { class: 'btn danger', onclick: () => decide('reject') }, T.reject)),
@@ -549,8 +583,10 @@ function route() {
 window.addEventListener('hashchange', route);
 (async () => {
   app.replaceChildren(topbar(), spinner());
-  const [who, info] = await Promise.all([api('/api/me').catch(() => null), api('/api/info').catch(() => null)]);
+  const [who, info] = await Promise.all([token() ? api('/api/me').catch(() => null) : null,
+    api('/api/info').catch(() => null)]);
   me = who && who.handle ? who : null;
+  if (!me) setToken('');
   disclaimer = info ? info.disclaimer : {
     en: 'Extensions and themes are made by users. HypeDE is not responsible for your system: you install them at your own risk.',
     ru: 'Расширения и темы создают пользователи. HypeDE не несёт ответственности за вашу систему: устанавливаете вы их на свой риск.',

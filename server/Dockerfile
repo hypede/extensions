@@ -13,6 +13,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY hypede_store ./hypede_store
+COPY index.py .
 COPY docker-start.sh .
 
 ENV HYPEDE_STORE_DATA=/data \

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import secrets
@@ -30,14 +31,29 @@ def check_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(actual, expected)
 
 
-def new_token() -> tuple[str, str]:
-    """Токен для куки и его хеш для базы: украденная база не даёт войти."""
-    token = secrets.token_urlsafe(32)
-    return token, token_hash(token)
+# Токен входа без хранения на сервере: «id.эпоха.срок» с подписью HMAC.
+# Эпоха лежит в аккаунте; «Выйти» и смена пароля увеличивают её, и все
+# выданные раньше токены перестают действовать.
+
+def make_token(secret: str, uid: str, epoch: int, days: int) -> str:
+    payload = f"{uid}.{epoch}.{int(time.time()) + days * 86400}"
+    signature = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=") + "." + signature
 
 
-def token_hash(token: str) -> str:
-    return hashlib.sha256(token.encode()).hexdigest()
+def read_token(secret: str, token: str) -> tuple[str, int] | None:
+    try:
+        encoded, signature = token.rsplit(".", 1)
+        payload = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)).decode()
+        expected = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            return None
+        uid, epoch, expires = payload.split(".")
+        if int(expires) < time.time():
+            return None
+        return uid, int(epoch)
+    except (ValueError, UnicodeDecodeError):
+        return None
 
 
 class RateLimiter:

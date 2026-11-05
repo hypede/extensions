@@ -1,4 +1,4 @@
-"""Обслуживание с сервера (без веба):
+"""Обслуживание без веба (данные — там же, где у сервиса: диск или Vercel Blob):
 
     python -m hypede_store.admin moderator НИК     сделать модератором
     python -m hypede_store.admin user НИК          снять права модератора
@@ -10,33 +10,34 @@
 import sys
 
 from .config import Config
-from .db import Database
+from .repo import Repo
+from .storage import from_env
 
 
 def main(argv: list[str]) -> int:
     if not argv or argv[0] not in ("moderator", "user", "ban", "unban", "queue"):
         print(__doc__)
         return 2
-    db = Database(Config().db_path)
+    repo = Repo(from_env(Config().data))
     if argv[0] == "queue":
-        for row in db.all("SELECT v.id, v.number, i.kind, i.name, u.handle FROM versions v "
-                          "JOIN items i ON i.id = v.item_id JOIN users u ON u.id = i.owner_id "
-                          "WHERE v.status = 'pending' ORDER BY v.created_at"):
-            print(f"#{row['id']}  {row['kind']:9}  {row['name']} v{row['number']}  by @{row['handle']}")
+        for pending in repo.queue():
+            item = repo.item(pending["item"])
+            if item:
+                print(f"{item['id']}-{pending['number']}  {item['kind']:9}  {item['name']}")
         return 0
     if len(argv) != 2:
         print(__doc__)
         return 2
-    handle = argv[1].lower()
-    if db.one("SELECT 1 FROM users WHERE handle = ?", handle) is None:
-        print(f"no user @{handle}")
+    user = repo.user_by_handle(argv[1].lower())
+    if user is None:
+        print(f"no user @{argv[1]}")
         return 1
     if argv[0] in ("moderator", "user"):
-        db.run("UPDATE users SET role = ? WHERE handle = ?", argv[0], handle)
+        user["role"] = argv[0]
     else:
-        db.run("UPDATE users SET banned = ? WHERE handle = ?", 1 if argv[0] == "ban" else 0, handle)
-        if argv[0] == "ban":
-            db.run("DELETE FROM sessions WHERE user_id = (SELECT id FROM users WHERE handle = ?)", handle)
+        user["banned"] = argv[0] == "ban"
+        user["epoch"] = user.get("epoch", 0) + 1
+    repo.save_user(user)
     print("done")
     return 0
 
